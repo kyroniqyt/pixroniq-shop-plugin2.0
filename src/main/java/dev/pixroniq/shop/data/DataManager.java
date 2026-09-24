@@ -31,7 +31,6 @@ public class DataManager {
         YamlConfiguration cfg = new YamlConfiguration();
         for (PlayerData pd : data.values()) {
             String path = "players." + pd.getUuid();
-            cfg.set(path + ".balance", pd.getBalance());
             cfg.set(path + ".owned", pd.getOwned().stream().toList());
             for (Map.Entry<ShopCategory, String> entry : pd.getActive().entrySet()) {
                 cfg.set(path + ".active." + entry.getKey().name(), entry.getValue());
@@ -61,7 +60,6 @@ public class DataManager {
             }
             PlayerData pd = new PlayerData(uuid);
             String base = "players." + uuidStr;
-            pd.setBalance(cfg.getInt(base + ".balance", 0));
             pd.getOwned().addAll(cfg.getStringList(base + ".owned"));
 
             ConfigurationSection activeSection = cfg.getConfigurationSection(base + ".active");

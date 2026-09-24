@@ -9,11 +9,18 @@ import dev.pixroniq.shop.pets.PetType;
 import dev.pixroniq.shop.shop.ShopCategory;
 import dev.pixroniq.shop.shop.ShopItem;
 import dev.pixroniq.shop.shop.ShopManager;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+/**
+ * Restores a player's equipped color/prefix on join (those work everywhere), and handles
+ * pets, which are hub-only: given when entering the configured hub world, removed the
+ * moment the player leaves it.
+ */
 public class PlayerConnectionListener implements Listener {
 
     private final PixroniqShopPlugin plugin;
@@ -31,38 +38,64 @@ public class PlayerConnectionListener implements Listener {
         this.pets = pets;
     }
 
+    private String hubWorld() {
+        return plugin.getConfig().getString("hub-world", "hub");
+    }
+
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        PlayerData pd = data.get(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        PlayerData pd = data.get(player.getUniqueId());
 
         String colorId = pd.getActive(ShopCategory.COLOR);
         if (colorId != null) {
             ShopItem item = shop.getItem(colorId);
-            if (item != null) display.applyColor(event.getPlayer(), item.getValue());
+            if (item != null) display.applyColor(player, item.getValue());
         }
 
         String prefixId = pd.getActive(ShopCategory.PREFIX);
         if (prefixId != null) {
             ShopItem item = shop.getItem(prefixId);
-            if (item != null) display.applyPrefix(event.getPlayer(), item.getValue());
+            if (item != null) display.applyPrefix(player, item.getValue());
         }
 
-        String petId = pd.getActive(ShopCategory.PET);
-        if (petId != null) {
-            ShopItem item = shop.getItem(petId);
-            if (item != null) {
-                PetType type = PetType.parse(item.getValue());
-                if (type != null) {
-                    // Delay slightly so the player's world/location is fully settled after join.
-                    plugin.getServer().getScheduler().runTaskLater(plugin,
-                            () -> pets.spawnPet(event.getPlayer(), type), 20L);
-                }
-            }
+        if (player.getWorld().getName().equalsIgnoreCase(hubWorld())) {
+            spawnEquippedPet(player, pd);
+        }
+    }
+
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        String hub = hubWorld();
+
+        boolean nowInHub = player.getWorld().getName().equalsIgnoreCase(hub);
+        boolean wasInHub = event.getFrom().getName().equalsIgnoreCase(hub);
+
+        if (wasInHub && !nowInHub) {
+            pets.despawnPet(player);
+        } else if (nowInHub && !wasInHub) {
+            spawnEquippedPet(player, data.get(player.getUniqueId()));
         }
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         pets.despawnPet(event.getPlayer());
+    }
+
+    private void spawnEquippedPet(Player player, PlayerData pd) {
+        String petId = pd.getActive(ShopCategory.PET);
+        if (petId == null) return;
+        ShopItem item = shop.getItem(petId);
+        if (item == null) return;
+        PetType type = PetType.parse(item.getValue());
+        if (type == null) return;
+        // Delay slightly so the player's world/location is fully settled after join/teleport.
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline() && player.getWorld().getName().equalsIgnoreCase(hubWorld())) {
+                pets.spawnPet(player, type);
+            }
+        }, 10L);
     }
 }

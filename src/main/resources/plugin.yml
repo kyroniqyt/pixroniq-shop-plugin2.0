@@ -3,7 +3,8 @@ version: 1.0.0
 main: dev.pixroniq.shop.PixroniqShopPlugin
 api-version: '1.20'
 author: YourName
-description: Coins, a cosmetics shop (colored names, prefixes, kill messages, hub pets), and duel-plugin reward hooks.
+description: Vault-backed coins, a cosmetics shop (colored names, prefixes, kill messages, hub-only pets), and duel-plugin reward hooks.
+softdepend: [Vault]
 commands:
   coins:
     description: Check or manage coin balances

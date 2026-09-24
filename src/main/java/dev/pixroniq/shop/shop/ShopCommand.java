@@ -1,8 +1,10 @@
 package dev.pixroniq.shop.shop;
 
+import dev.pixroniq.shop.PixroniqShopPlugin;
 import dev.pixroniq.shop.data.DataManager;
 import dev.pixroniq.shop.data.PlayerData;
 import dev.pixroniq.shop.display.DisplayManager;
+import dev.pixroniq.shop.economy.EconomyManager;
 import dev.pixroniq.shop.pets.PetManager;
 import dev.pixroniq.shop.pets.PetType;
 import org.bukkit.ChatColor;
@@ -19,16 +21,21 @@ import java.util.stream.Collectors;
 
 public class ShopCommand implements CommandExecutor, TabCompleter {
 
+    private final PixroniqShopPlugin plugin;
     private final ShopManager shop;
     private final DataManager data;
     private final DisplayManager display;
     private final PetManager pets;
+    private final EconomyManager economy;
 
-    public ShopCommand(ShopManager shop, DataManager data, DisplayManager display, PetManager pets) {
+    public ShopCommand(PixroniqShopPlugin plugin, ShopManager shop, DataManager data, DisplayManager display,
+                        PetManager pets, EconomyManager economy) {
+        this.plugin = plugin;
         this.shop = shop;
         this.data = data;
         this.display = display;
         this.pets = pets;
+        this.economy = economy;
     }
 
     @Override
@@ -140,23 +147,28 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(ChatColor.RED + "No shop item with that id.");
                     return true;
                 }
+                if (!economy.isReady()) {
+                    sender.sendMessage(ChatColor.RED + "No economy plugin found. Ask an admin to install Vault "
+                            + "plus an economy plugin (e.g. EssentialsX) for the shop to work.");
+                    return true;
+                }
                 PlayerData pd = data.get(player.getUniqueId());
                 if (pd.owns(item.getId())) {
                     sender.sendMessage(ChatColor.YELLOW + "You already own that \u2014 equipping it instead.");
                     equip(player, item);
                     return true;
                 }
-                if (pd.getBalance() < item.getPrice()) {
-                    sender.sendMessage(ChatColor.RED + "You need " + item.getPrice() + " coins for that \u2014 you have "
-                            + pd.getBalance() + ".");
+                if (!economy.has(player, item.getPrice())) {
+                    sender.sendMessage(ChatColor.RED + "You need " + economy.format(item.getPrice())
+                            + " for that \u2014 you have " + economy.format(economy.getBalance(player)) + ".");
                     return true;
                 }
-                pd.setBalance(pd.getBalance() - item.getPrice());
+                economy.withdraw(player, item.getPrice());
                 pd.getOwned().add(item.getId());
                 data.save();
                 equip(player, item);
                 sender.sendMessage(ChatColor.GREEN + "Bought and equipped '" + item.getDisplayName() + ChatColor.GREEN
-                        + "' for " + item.getPrice() + " coins.");
+                        + "' for " + economy.format(item.getPrice()) + ".");
                 return true;
             }
             case "use": {
@@ -212,7 +224,10 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
             case PREFIX -> display.applyPrefix(player, item.getValue());
             case PET -> {
                 PetType type = PetType.parse(item.getValue());
-                if (type != null) pets.spawnPet(player, type);
+                if (type != null && player.getWorld().getName()
+                        .equalsIgnoreCase(plugin.getConfig().getString("hub-world", "hub"))) {
+                    pets.spawnPet(player, type);
+                }
             }
             case KILLMESSAGE -> {
                 // No live effect to apply - looked up at kill time by /killmsg trigger.

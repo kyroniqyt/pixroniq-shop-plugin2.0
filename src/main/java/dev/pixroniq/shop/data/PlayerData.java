@@ -11,7 +11,6 @@ import java.util.UUID;
 public class PlayerData {
 
     private final UUID uuid;
-    private int balance;
     private final Set<String> owned = new HashSet<>();
     private final Map<ShopCategory, String> active = new EnumMap<>(ShopCategory.class);
 
@@ -21,14 +20,6 @@ public class PlayerData {
 
     public UUID getUuid() {
         return uuid;
-    }
-
-    public int getBalance() {
-        return balance;
-    }
-
-    public void setBalance(int balance) {
-        this.balance = Math.max(0, balance);
     }
 
     public Set<String> getOwned() {

@@ -1,9 +1,8 @@
 package dev.pixroniq.shop.economy;
 
-import dev.pixroniq.shop.data.DataManager;
-import dev.pixroniq.shop.data.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,14 +16,20 @@ import java.util.stream.Collectors;
 
 public class CoinCommand implements CommandExecutor, TabCompleter {
 
-    private final DataManager data;
+    private final EconomyManager economy;
 
-    public CoinCommand(DataManager data) {
-        this.data = data;
+    public CoinCommand(EconomyManager economy) {
+        this.economy = economy;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!economy.isReady()) {
+            sender.sendMessage(ChatColor.RED + "No economy plugin found. Ask an admin to install Vault "
+                    + "plus an economy plugin (e.g. EssentialsX) for coins to work.");
+            return true;
+        }
+
         // /coins                       -> your own balance
         // /coins <player>              -> someone else's balance
         // /coins give|take|set <player> <amount>  -> admin only
@@ -33,8 +38,7 @@ public class CoinCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.RED + "Console must specify a player: /coins <player>");
                 return true;
             }
-            sender.sendMessage(ChatColor.YELLOW + "You have " + ChatColor.GOLD + data.get(player.getUniqueId()).getBalance()
-                    + ChatColor.YELLOW + " coins.");
+            sender.sendMessage(ChatColor.YELLOW + "You have " + ChatColor.GOLD + economy.format(economy.getBalance(player)));
             return true;
         }
 
@@ -48,37 +52,28 @@ public class CoinCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.RED + "Usage: /coins " + first + " <player> <amount>");
                 return true;
             }
-            Player target = Bukkit.getPlayer(args[1]);
-            if (target == null) {
-                sender.sendMessage(ChatColor.RED + "Player not found or not online.");
-                return true;
-            }
-            int amount;
+            OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
+            double amount;
             try {
-                amount = Integer.parseInt(args[2]);
+                amount = Double.parseDouble(args[2]);
             } catch (NumberFormatException e) {
                 sender.sendMessage(ChatColor.RED + "Amount must be a number.");
                 return true;
             }
-            PlayerData pd = data.get(target.getUniqueId());
             switch (first) {
-                case "give" -> pd.setBalance(pd.getBalance() + amount);
-                case "take" -> pd.setBalance(pd.getBalance() - amount);
-                case "set" -> pd.setBalance(amount);
+                case "give" -> economy.deposit(target, amount);
+                case "take" -> economy.withdraw(target, amount);
+                case "set" -> economy.set(target, amount);
             }
-            data.save();
-            sender.sendMessage(ChatColor.GREEN + target.getName() + "'s balance is now " + pd.getBalance() + " coins.");
+            sender.sendMessage(ChatColor.GREEN + (target.getName() != null ? target.getName() : args[1])
+                    + "'s balance is now " + economy.format(economy.getBalance(target)));
             return true;
         }
 
         // /coins <player>
-        Player target = Bukkit.getPlayer(args[0]);
-        if (target == null) {
-            sender.sendMessage(ChatColor.RED + "Player not found or not online.");
-            return true;
-        }
-        sender.sendMessage(ChatColor.YELLOW + target.getName() + " has " + ChatColor.GOLD
-                + data.get(target.getUniqueId()).getBalance() + ChatColor.YELLOW + " coins.");
+        OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
+        sender.sendMessage(ChatColor.YELLOW + (target.getName() != null ? target.getName() : args[0]) + " has "
+                + ChatColor.GOLD + economy.format(economy.getBalance(target)));
         return true;
     }
 

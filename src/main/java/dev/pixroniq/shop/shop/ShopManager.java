@@ -52,6 +52,49 @@ public class ShopManager {
         return out;
     }
 
+    /**
+     * Populates the shop with the full catalog from your original list, only if it's
+     * currently empty (so this never overwrites items you've since edited or added).
+     * Adjust prices/values afterward with /shop setvalue or /shop additem as needed.
+     */
+    public void loadDefaultsIfEmpty() {
+        if (!items.isEmpty()) return;
+
+        // Colored names - best-guess colors for names that don't map to a standard color word.
+        // Fix any of these with /shop setvalue <id> <color> if they're not what you meant.
+        addItem("cyan", ShopCategory.COLOR, "&bCyan", 1000, "AQUA");
+        addItem("pink", ShopCategory.COLOR, "&dPink", 1000, "LIGHT_PURPLE");
+        addItem("yn", ShopCategory.COLOR, "&6YN", 1000, "GOLD");
+        addItem("black", ShopCategory.COLOR, "&0Black", 1000, "BLACK");
+        addItem("slice", ShopCategory.COLOR, "&fSlice", 1000, "WHITE");
+        addItem("yellow", ShopCategory.COLOR, "&eYellow", 1000, "YELLOW");
+        addItem("kyronblue", ShopCategory.COLOR, "&9Kyron Blue", 1000, "BLUE");
+
+        // Prefixes
+        addItem("legend", ShopCategory.PREFIX, "&6Legend", 2000, "&6[Legend] ");
+        addItem("bedwarsmaster", ShopCategory.PREFIX, "&aBedWars Master", 2000, "&a[BedWars Master] ");
+        addItem("skywarsgod", ShopCategory.PREFIX, "&bSkyWars God", 2000, "&b[SkyWars God] ");
+        addItem("duelsmonster", ShopCategory.PREFIX, "&cDuels Monster", 2000, "&c[Duels Monster] ");
+        addItem("killingmachine", ShopCategory.PREFIX, "&4Killing Machine", 2000, "&4[Killing Machine] ");
+        addItem("immortal", ShopCategory.PREFIX, "&5Immortal", 2000, "&5[Immortal] ");
+        addItem("touchgrass", ShopCategory.PREFIX, "&2Touch Grass", 2000, "&2[Touch Grass] ");
+        addItem("ekitten", ShopCategory.PREFIX, "&dE-Kitten", 2000, "&d[E-Kitten] ");
+
+        // Hub pets - Capybara is a Turtle standing in until a resource pack reskins one; see PetType.java.
+        addItem("dog", ShopCategory.PET, "&fDog", 4000, "DOG");
+        addItem("cat", ShopCategory.PET, "&fCat", 4000, "CAT");
+        addItem("capybara", ShopCategory.PET, "&fCapybara", 4000, "CAPYBARA");
+        addItem("parrot", ShopCategory.PET, "&fParrot", 4000, "PARROT");
+
+        // Kill messages
+        addItem("deleted", ShopCategory.KILLMESSAGE, "Deleted", 1250, "{killer} deleted {victim}.");
+        addItem("clipped", ShopCategory.KILLMESSAGE, "Clipped", 1250, "{killer} clipped {victim}.");
+        addItem("comboed", ShopCategory.KILLMESSAGE, "Comboed", 1250, "{victim} got comboed by {killer}.");
+        addItem("ragequit", ShopCategory.KILLMESSAGE, "Rage Quit", 1250, "{killer} made {victim} rage quit.");
+        addItem("obliterated", ShopCategory.KILLMESSAGE, "Obliterated", 1250, "{killer} obliterated {victim}.");
+        addItem("lobby", ShopCategory.KILLMESSAGE, "Sent to Lobby", 1250, "{killer} sent {victim} back to the lobby.");
+    }
+
     public void save() {
         YamlConfiguration cfg = new YamlConfiguration();
         for (ShopItem item : items.values()) {

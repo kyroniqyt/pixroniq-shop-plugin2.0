@@ -1,0 +1,3 @@
+# The world hub pets are allowed in. Pets are given/spawned when a player enters this world
+# and removed the moment they leave it. Must match your world's actual folder name exactly.
+hub-world: hub
