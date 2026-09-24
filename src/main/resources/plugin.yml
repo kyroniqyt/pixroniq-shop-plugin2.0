@@ -1,0 +1,26 @@
+name: PixroniqShop
+version: 1.0.0
+main: dev.pixroniq.shop.PixroniqShopPlugin
+api-version: '1.20'
+author: YourName
+description: Coins, a cosmetics shop (colored names, prefixes, kill messages, hub pets), and duel-plugin reward hooks.
+commands:
+  coins:
+    description: Check or manage coin balances
+    usage: /coins [player | give|take|set <player> <amount>]
+    permission: pixroniqshop.use
+  shop:
+    description: Buy and manage cosmetics
+    usage: /shop <list|buy|use|owned|additem|removeitem>
+    permission: pixroniqshop.use
+  killmsg:
+    description: Trigger a player's equipped kill message (meant to be called by your duels plugin)
+    usage: /killmsg trigger <killer> <victim>
+    permission: pixroniqshop.admin
+permissions:
+  pixroniqshop.use:
+    description: Access to the shop and coins commands
+    default: true
+  pixroniqshop.admin:
+    description: Manage shop items, coin balances, and trigger kill messages
+    default: op
